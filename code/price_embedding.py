@@ -6,6 +6,7 @@
 import os
 import sys
 import json
+import argparse #pmb
 import pickle
 import numpy as np
 import pandas as pd
@@ -26,7 +27,8 @@ def struc2vec_embedding(input_):
         os.makedirs(em_dir)
     ems = {}
     for d, adj in vgs.items():
-        labels = np.array([str(i) for i in range(20)])
+        #labels = np.array([str(i) for i in range(20)])
+        labels = np.array([str(i) for i in range(time_step)]) #PMB changed to variable for timestep of 5 instead of 20
         G = nx.Graph()
         for i in range(len(labels)):
             adj_nodes = labels[np.where(adj[i] == 1)]
@@ -40,7 +42,19 @@ def struc2vec_embedding(input_):
         json.dump(ems, fp)
 
 
+def getArgParser():
+    parser = argparse.ArgumentParser(description='Train the price graph model on stock') #pmb
+    parser.add_argument( #pmb
+        '-ts', '--timestep', type=int, default=20, #pmb
+        help='the length of time_step') #pmb
+    return parser #pmb
+
+
 if __name__ == '__main__':
+    args = getArgParser().parse_args() #pmb
+    time_step = args.timestep #pmb
+    print(args) #pmb
+
     vol_price = ['close', 'vol', 'amount', 'high', 'open', 'low']
     Dim = 32
     for PI in vol_price:

@@ -6,6 +6,7 @@
 import os
 import sys
 import json
+import argparse #pmb
 import pickle
 import pyunicorn
 import pandas as pd
@@ -29,6 +30,8 @@ def make_visibility_graph(input_):
         if df.loc[:i,:].shape[0] < T:
             continue
         time_series = df.iloc[iloc-T+1:iloc+1][PI]
+        #time_series = df.iloc[iloc-T+1:iloc+1][PI].astype(float)  #pmb
+        #20#time_series = pd.to_numeric(df.iloc[iloc-T+1:iloc+1][PI], errors='coerce') #pmb added due to errors in converting type
         if len(set(time_series.values)) == 1:
             continue
         net = timeseries.visibility_graph.VisibilityGraph(time_series.values)
@@ -37,7 +40,19 @@ def make_visibility_graph(input_):
         pickle.dump(vgs, fp)
 
 
+def getArgParser():
+    parser = argparse.ArgumentParser(description='Train the price graph model on stock') #pmb
+    parser.add_argument( #pmb
+        '-ts', '--timestep', type=int, default=20, #pmb
+        help='the length of time_step') #pmb
+    return parser #pmb
+
+
 if __name__ == '__main__':
+    args = getArgParser().parse_args() #pmb
+    time_step = args.timestep #pmb
+    print(args) #pmb
+
     vol_price = ['vol', 'amount', 'high', 'open', 'low', 'close']
     files = os.listdir('../data')
     for PI in vol_price:
@@ -45,6 +60,8 @@ if __name__ == '__main__':
         if not os.path.exists(vg_dir):
             os.makedirs(vg_dir)
         pool = Pool()
-        pool.map(make_visibility_graph, [(f, PI, 20) for f in files])
+        #pool.map(make_visibility_graph, [(f, PI, 20) for f in files])
+        pool.map(make_visibility_graph, [(f, PI, time_step) for f in files]) #PMB made this a variable - 5 for a timestep of 5
         pool.close()
         pool.join()
+

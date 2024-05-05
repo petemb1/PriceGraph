@@ -35,13 +35,15 @@ def data_filter(dataset):
     for i in range(sample_len):
         for xi in x_column:
             s = dataset[xi+'_ems'][i]
-            if s.shape != (20, 32):
+            #if s.shape != (20, 32):
+            if s.shape != (time_step, 32): #PMB change to variable for timestep - 5 for timestep of 5 instead of 20
                 mask[i] = False
     return {k: np.array(list(v[mask])) for k, v in dataset.items()}
 
 
 def load_season(season):
-    with open(os.path.join('../dataset', '2019_S%s.pickle' % season), 'rb') as fp:
+    #with open(os.path.join('../dataset', '2019_S%s.pickle' % season), 'rb') as fp:
+    with open(os.path.join('../dataset', '2023_S%s.pickle' % season), 'rb') as fp:  #PMB change year for test data
         return data_filter(pickle.load(fp))
 
 
@@ -110,10 +112,13 @@ class Trainer:
         precision = precision_score(ori_y, results, labels=[1], average=None)[0]
         recall = recall_score(ori_y, results, labels=[1], average=None)[0]
         f1 = f1_score(ori_y, results, labels=[1], average=None)[0]
+        #f1 = f1_score(ori_y, results, labels=[1], average=None, zero_division=np.nan)[0] #pmb
         return accuracy, precision, recall, f1
 
     def train_minibatch(self, num_epochs):
         train_size = len(self.train['ts'])
+        acc_max_diff = 0 #PMB added to fixed assignment error
+        acc_max = 0 #PMB added to fixed assignment error
         result = {}
         for epoch in range(num_epochs):
             loss_sum = 0
@@ -195,6 +200,12 @@ class Trainer:
         self.emtree.load_state_dict(torch.load(emtree_path, map_location=lambda storage, loc: storage))
         self.output.load_state_dict(torch.load(output_path, map_location=lambda storage, loc: storage))
 
+    def load_model_pmb(self):
+        emtree_path = '../models/PriceGraph_emtree_pmb.model'
+        output_path = '../models/PriceGraph_output_pmb.model'
+        self.emtree.load_state_dict(torch.load(emtree_path, map_location=lambda storage, loc: storage))
+        self.output.load_state_dict(torch.load(output_path, map_location=lambda storage, loc: storage))
+
     def test_data(self):
         data = self.test
         y_predict = []
@@ -251,6 +262,9 @@ def getArgParser():
     parser.add_argument(
         '--test_2019', action='store_true',
         help='test with models for 2019')
+    parser.add_argument(
+        '--test_pmb', action='store_true',
+        help='test with pmb models for another season')
     return parser
 
 
@@ -274,6 +288,8 @@ if __name__ == '__main__':
     if args.test:
         if args.test_2019:
             trainer.load_model_2019(Season)
+        elif args.test_pmb:
+            trainer.load_model_pmb()
         else:
             trainer.load_model(num_epochs)
         trainer.test_data()

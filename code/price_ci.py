@@ -6,6 +6,7 @@
 import os
 import sys
 import json
+import argparse #pmb
 import pickle
 import numpy as np
 import networkx as nx
@@ -20,7 +21,8 @@ def vg_ci(_input):
         vgs = pickle.load(fp)
     cis = {}
     for d, adj in vgs.items():
-        labels = np.array([str(i) for i in range(20)])
+        #labels = np.array([str(i) for i in range(20)])
+        labels = np.array([str(i) for i in range(time_step)])  #PMB changed to variable - 5 for new timestep from 20
         G = nx.Graph()
         for i in range(T):
             vg_adjs = labels[np.where(adj[i] == 1)]
@@ -32,9 +34,22 @@ def vg_ci(_input):
         json.dump(cis, fp)
 
 
+def getArgParser():
+    parser = argparse.ArgumentParser(description='Train the price graph model on stock') #pmb
+    parser.add_argument( #pmb
+        '-ts', '--timestep', type=int, default=20, #pmb
+        help='the length of time_step') #pmb
+    return parser #pmb
+
+
 if __name__ == '__main__':
+    args = getArgParser().parse_args() #pmb
+    time_step = args.timestep #pmb
+    print(args) #pmb
+
     vol_price = ['close', 'vol', 'amount', 'high', 'open', 'low']
-    T = 20
+    #T = 20
+    T = time_step  #PMB change to variable - 5 from 20 for new timestep
     for PI in vol_price:
         vg_dir = os.path.join('../VG/', PI)
         ci_dir = os.path.join('../CI', PI)
@@ -44,3 +59,4 @@ if __name__ == '__main__':
         pool.map(vg_ci, [(f, PI, T) for f in os.listdir(vg_dir)])
         pool.close()
         pool.join()
+
